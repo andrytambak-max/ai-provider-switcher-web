@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Provider Switcher</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -26,19 +26,61 @@
       <main class="container main-content">
         <section class="panel market-section">
           <div class="panel-header">
-            <h2>📈 Market Analysis (TradingView)</h2>
+            <h2>📈 Market Analysis</h2>
             <span id="statusBadge" class="status-badge">Ready</span>
           </div>
 
           <div class="charts-grid">
             <div class="chart-container">
               <h3>Bitcoin (BTC)</h3>
-              <div id="tradingview-btc" class="tradingview-chart"></div>
+              <canvas id="btcChart" class="chart-canvas" height="220"></canvas>
             </div>
             <div class="chart-container">
               <h3>Gold (XAUUSD)</h3>
-              <div id="tradingview-gold" class="tradingview-chart"></div>
+              <canvas id="goldChart" class="chart-canvas" height="220"></canvas>
             </div>
+          </div>
+        </section>
+
+        <section class="panel automation-panel">
+          <div class="panel-header">
+            <h2>⚙️ EA Automation</h2>
+          </div>
+
+          <div class="automation-grid">
+            <label>
+              Asset
+              <select id="automationAsset">
+                <option value="BTC">BTC</option>
+                <option value="GOLD">Gold</option>
+              </select>
+            </label>
+
+            <label>
+              Timeframe
+              <select id="automationTimeframe">
+                <option value="1m">1m</option>
+                <option value="5m">5m</option>
+                <option value="15m">15m</option>
+                <option value="1h">1h</option>
+              </select>
+            </label>
+
+            <label>
+              EA Model
+              <select id="eaModelSelect"></select>
+            </label>
+          </div>
+
+          <div class="form-actions automation-actions">
+            <button id="startAutomationBtn" class="btn btn-primary">Start 1m automation</button>
+            <button id="stopAutomationBtn" class="btn btn-secondary">Stop</button>
+            <span id="automationStatus" class="automation-status">Stopped</span>
+          </div>
+
+          <div class="automation-result-wrap">
+            <h3>Automation result</h3>
+            <pre id="automationResult" class="automation-result">No analysis yet.</pre>
           </div>
         </section>
 
@@ -135,38 +177,5 @@
     <div id="toast" class="toast"></div>
 
     <script src="app.js"></script>
-    <script>
-      function initTradingViewCharts() {
-        new TradingView.widget({
-          autosize: true,
-          symbol: 'BITSTAMP:BTCUSD',
-          interval: 'D',
-          timezone: 'Etc/UTC',
-          theme: 'dark',
-          style: '1',
-          locale: 'en',
-          toolbar_bg: '#f1f3f6',
-          enable_publishing: false,
-          allow_symbol_change: true,
-          container_id: 'tradingview-btc'
-        });
-
-        new TradingView.widget({
-          autosize: true,
-          symbol: 'TVC:GOLD',
-          interval: 'D',
-          timezone: 'Etc/UTC',
-          theme: 'dark',
-          style: '1',
-          locale: 'en',
-          toolbar_bg: '#f1f3f6',
-          enable_publishing: false,
-          allow_symbol_change: true,
-          container_id: 'tradingview-gold'
-        });
-      }
-
-      document.addEventListener('DOMContentLoaded', initTradingViewCharts);
-    </script>
   </body>
 </html>
