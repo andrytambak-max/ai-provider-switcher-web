@@ -1,274 +1,195 @@
-const PROVIDER_META = {
-  gemini: { name: 'Gemini', icon: '🔵', model: 'gemini-2.0-flash' },
-  claude: { name: 'Claude', icon: '🧠', model: 'claude-3-5-sonnet-20241022' },
-  gpt: { name: 'GPT', icon: '🚀', model: 'gpt-4o-mini' },
-  deepseek: { name: 'DeepSeek', icon: '🌊', model: 'deepseek-chat' },
-  grok: { name: 'Grok', icon: '🐦', model: 'grok-beta' },
-  local: { name: 'Ollama', icon: '🏠', model: 'llama3.1' }
-};
-
-const defaultState = {
-  currentProvider: 'gemini',
-  providers: {
-    gemini: { apiKey: '', model: 'gemini-2.0-flash' },
-    claude: { apiKey: '', model: 'claude-3-5-sonnet-20241022' },
-    gpt: { apiKey: '', model: 'gpt-4o-mini' },
-    deepseek: { apiKey: '', model: 'deepseek-chat' },
-    grok: { apiKey: '', model: 'grok-beta' },
-    local: { apiKey: '', model: 'llama3.1' }
+const EA_MODELS = {
+  scalping: {
+    name: 'Scalping EA',
+    version: '2.5',
+    description: 'Ultra-fast scalping strategy for 1-5 min timeframes',
+    features: ['Real-time signals', 'Risk management', 'Volume analysis'],
+    timeframes: ['1m', '5m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 1,
+    takeProfit: 50,
+    stopLoss: 20
   },
-  history: []
+  daytrading: {
+    name: 'Day Trading EA',
+    version: '3.1',
+    description: 'Daily trading strategy for 15m-1h charts',
+    features: ['Support/Resistance', 'Trend detection', 'Entry signals'],
+    timeframes: ['15m', '30m', '1h'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 2,
+    takeProfit: 100,
+    stopLoss: 40
+  },
+  swingtrading: {
+    name: 'Swing Trading EA',
+    version: '2.8',
+    description: 'Multi-day swing strategy for 4h-1D timeframes',
+    features: ['Fibonacci levels', 'Moving averages', 'Pattern recognition'],
+    timeframes: ['4h', '1D'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 1.5,
+    takeProfit: 200,
+    stopLoss: 60
+  },
+  arbitrage: {
+    name: 'Arbitrage EA',
+    version: '2.2',
+    description: 'Cross-exchange arbitrage opportunities',
+    features: ['Price discrepancy detection', 'Instant execution', 'Low latency'],
+    timeframes: ['1m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 0.5,
+    takeProfit: 25,
+    stopLoss: 10
+  },
+  gridtrading: {
+    name: 'Grid Trading EA',
+    version: '3.0',
+    description: 'Grid-based trading in range-bound markets',
+    features: ['Auto-grid placement', 'Profit accumulation', 'Dynamic levels'],
+    timeframes: ['5m', '15m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 2.5,
+    takeProfit: 150,
+    stopLoss: 80
+  },
+  martingale: {
+    name: 'Martingale EA',
+    version: '2.6',
+    description: 'Progressive lot size strategy with reversal detection',
+    features: ['Lot progression', 'Reversal signals', 'Breakeven protection'],
+    timeframes: ['30m', '1h'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 3,
+    takeProfit: 120,
+    stopLoss: 100
+  }
 };
 
-const state = loadState();
+// Add automation and EA model support to existing app state
+const automationState = {
+  intervalId: null,
+  isRunning: false,
+  intervalMs: 60000
+};
 
-const providerGrid = document.getElementById('providerGrid');
-const providerSelect = document.getElementById('providerSelect');
-const providerApiKeyInput = document.getElementById('providerApiKey');
-const providerModelInput = document.getElementById('providerModel');
-const currentProviderName = document.getElementById('currentProviderName');
-const currentProviderLabel = document.getElementById('currentProviderLabel');
-const currentProviderModel = document.getElementById('currentProviderModel');
-const currentModelText = document.getElementById('currentModelText');
-const currentKeyState = document.getElementById('currentKeyState');
-const currentProviderIcon = document.getElementById('currentProviderIcon');
-const responseOutput = document.getElementById('responseOutput');
-const historyList = document.getElementById('historyList');
-const toast = document.getElementById('toast');
-const statusBadge = document.getElementById('statusBadge');
-
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('ai-provider-switcher-state') || 'null');
-    if (!saved) return structuredClone(defaultState);
-
-    return {
-      currentProvider: saved.currentProvider || defaultState.currentProvider,
-      providers: { ...defaultState.providers, ...(saved.providers || {}) },
-      history: Array.isArray(saved.history) ? saved.history : []
-    };
-  } catch (error) {
-    console.error('Failed to load state:', error);
-    return structuredClone(defaultState);
-  }
-}
-
-function saveState() {
-  localStorage.setItem('ai-provider-switcher-state', JSON.stringify(state));
-}
-
-function showToast(message, type = 'info') {
-  toast.textContent = message;
-  toast.className = `toast show ${type}`;
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2800);
-}
-
-function renderProviderGrid() {
-  providerGrid.innerHTML = '';
-
-  Object.entries(PROVIDER_META).forEach(([providerId, meta]) => {
-    const provider = document.createElement('button');
-    provider.type = 'button';
-    provider.className = `provider-item ${state.currentProvider === providerId ? 'active' : ''}`;
-    provider.innerHTML = `
-      <div class="provider-item-icon">${meta.icon}</div>
-      <div class="provider-item-name">${meta.name}</div>
-      <div class="provider-item-model">${state.providers[providerId]?.model || meta.model}</div>
-    `;
-
-    provider.addEventListener('click', () => {
-      state.currentProvider = providerId;
-      saveState();
-      render();
-      showToast(`${meta.name} selected`, 'success');
-    });
-
-    providerGrid.appendChild(provider);
-  });
-}
-
-function renderProviderSelect() {
-  providerSelect.innerHTML = '';
-
-  Object.entries(PROVIDER_META).forEach(([providerId, meta]) => {
-    const option = document.createElement('option');
-    option.value = providerId;
-    option.textContent = `${meta.icon} ${meta.name}`;
-    if (state.currentProvider === providerId) option.selected = true;
-    providerSelect.appendChild(option);
-  });
-}
-
-function renderCurrentProvider() {
-  const providerId = state.currentProvider;
-  const provider = PROVIDER_META[providerId];
-  const config = state.providers[providerId];
-
-  currentProviderName.textContent = provider.name;
-  currentProviderLabel.textContent = provider.name;
-  currentProviderIcon.textContent = provider.icon;
-  currentProviderModel.textContent = config.model || provider.model;
-  currentModelText.textContent = config.model || provider.model;
-  currentKeyState.textContent = config.apiKey ? 'Set' : 'Not set';
-
-  providerApiKeyInput.value = config.apiKey || '';
-  providerModelInput.value = config.model || provider.model;
-}
-
-function renderHistory() {
-  historyList.innerHTML = '';
-
-  if (!state.history.length) {
-    historyList.innerHTML = '<li class="empty-history">No recent activity yet.</li>';
-    return;
-  }
-
-  state.history.slice(0, 8).forEach((item) => {
-    const li = document.createElement('li');
-    li.className = 'history-item';
-    li.innerHTML = `
-      <span class="history-provider">${PROVIDER_META[item.provider]?.name || item.provider}</span>
-      <span class="history-time">${new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-      <span class="history-text">${item.prompt.slice(0, 80)}${item.prompt.length > 80 ? '...' : ''}</span>
-    `;
-    historyList.appendChild(li);
-  });
-}
-
-function render() {
-  renderProviderGrid();
-  renderProviderSelect();
-  renderCurrentProvider();
-  renderHistory();
-  statusBadge.textContent = 'Ready';
-}
-
-async function sendChatRequest(payload) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
+async function fetchEAModels() {
+  const response = await fetch('/api/ea-models');
   const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data?.error || 'Request failed');
-  }
-
-  return data;
+  return data.eaModels || {};
 }
 
-async function testCurrentProvider() {
+async function startAutoAnalysis() {
   const providerId = state.currentProvider;
   const config = state.providers[providerId];
+  const asset = document.getElementById('automationAsset')?.value || 'BTC';
+  const timeframe = document.getElementById('automationTimeframe')?.value || '1m';
+  const eaModel = document.getElementById('eaModelSelect')?.value || 'scalping';
 
-  statusBadge.textContent = 'Testing...';
-
-  try {
-    const response = await fetch('/api/test-provider', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        providerId,
-        apiKey: config.apiKey,
-        model: config.model
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data?.error || 'Test failed');
-    }
-
-    responseOutput.textContent = `Connection successful: ${data.answer}`;
-    showToast(`${PROVIDER_META[providerId].name} is reachable`, 'success');
-    statusBadge.textContent = 'Connected';
-  } catch (error) {
-    responseOutput.textContent = `Test failed: ${error.message}`;
-    showToast(error.message, 'error');
-    statusBadge.textContent = 'Error';
-  }
-}
-
-async function generateResponse() {
-  const providerId = state.currentProvider;
-  const config = state.providers[providerId];
-  const prompt = document.getElementById('promptInput').value.trim();
-
-  if (!prompt) {
-    showToast('Please write a prompt first', 'warning');
+  if (!config.apiKey && providerId !== 'local') {
+    showToast('Set API key before running automation', 'warning');
     return;
   }
 
-  statusBadge.textContent = 'Generating...';
-  responseOutput.textContent = 'Generating response...';
+  automationState.isRunning = true;
+  updateAutomationStatus('Running');
 
-  try {
-    const result = await sendChatRequest({
-      providerId,
-      apiKey: config.apiKey,
-      model: config.model,
-      message: prompt,
-      temperature: Number(document.getElementById('temperatureInput').value),
-      maxTokens: Number(document.getElementById('maxTokensInput').value)
-    });
+  const runAnalysis = async () => {
+    try {
+      const response = await fetch('/api/market-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId,
+          apiKey: config.apiKey,
+          model: config.model,
+          asset,
+          timeframe,
+          eaModel
+        })
+      });
 
-    responseOutput.textContent = result.answer;
-    state.history.unshift({
-      provider: providerId,
-      prompt,
-      time: Date.now()
-    });
-    saveState();
-    renderHistory();
-    showToast('Response generated successfully', 'success');
-    statusBadge.textContent = 'Ready';
-  } catch (error) {
-    responseOutput.textContent = `Error: ${error.message}`;
-    showToast(error.message, 'error');
-    statusBadge.textContent = 'Error';
-  }
-}
+      const data = await response.json();
 
-function handleProviderFormSubmit(event) {
-  event.preventDefault();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Automation failed');
+      }
 
-  const providerId = providerSelect.value;
-  const apiKey = providerApiKeyInput.value.trim();
-  const model = providerModelInput.value.trim();
+      const resultBox = document.getElementById('automationResult');
+      if (resultBox) {
+        resultBox.textContent = `${new Date().toLocaleTimeString()}\n\n${data.analysis}`;
+      }
 
-  state.providers[providerId] = {
-    apiKey,
-    model: model || PROVIDER_META[providerId].model
+      showToast(`Analysis updated for ${asset}`, 'success');
+    } catch (error) {
+      const resultBox = document.getElementById('automationResult');
+      if (resultBox) {
+        resultBox.textContent = `Error: ${error.message}`;
+      }
+      showToast(error.message, 'error');
+    }
   };
 
-  state.currentProvider = providerId;
-  saveState();
-  render();
-  showToast(`${PROVIDER_META[providerId].name} settings saved`, 'success');
+  await runAnalysis();
+
+  if (automationState.intervalId) {
+    clearInterval(automationState.intervalId);
+  }
+
+  automationState.intervalId = setInterval(runAnalysis, automationState.intervalMs);
 }
 
-function clearPrompt() {
-  document.getElementById('promptInput').value = '';
-  responseOutput.textContent = 'No response yet.';
+function stopAutoAnalysis() {
+  automationState.isRunning = false;
+  updateAutomationStatus('Stopped');
+
+  if (automationState.intervalId) {
+    clearInterval(automationState.intervalId);
+    automationState.intervalId = null;
+  }
 }
 
-providerSelect.addEventListener('change', (event) => {
-  state.currentProvider = event.target.value;
-  saveState();
-  render();
-});
+function updateAutomationStatus(value) {
+  const statusEl = document.getElementById('automationStatus');
+  if (statusEl) {
+    statusEl.textContent = value;
+  }
+}
 
-document.getElementById('providerForm').addEventListener('submit', handleProviderFormSubmit);
-document.getElementById('generateBtn').addEventListener('click', generateResponse);
-document.getElementById('clearBtn').addEventListener('click', clearPrompt);
-document.getElementById('testProviderBtn').addEventListener('click', testCurrentProvider);
-document.getElementById('temperatureInput').addEventListener('input', (event) => {
-  document.getElementById('temperatureValue').textContent = Number(event.target.value).toFixed(1);
-});
+async function populateEAModels() {
+  try {
+    const eaModels = await fetchEAModels();
+    const select = document.getElementById('eaModelSelect');
+    if (!select) return;
 
-render();
+    select.innerHTML = '';
+
+    Object.entries(eaModels).forEach(([key, model]) => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = `${model.name} v${model.version}`;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Failed to load EA models:', error);
+  }
+}
+
+function bindAutomationControls() {
+  const startBtn = document.getElementById('startAutomationBtn');
+  const stopBtn = document.getElementById('stopAutomationBtn');
+
+  if (startBtn) {
+    startBtn.addEventListener('click', startAutoAnalysis);
+  }
+
+  if (stopBtn) {
+    stopBtn.addEventListener('click', stopAutoAnalysis);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateEAModels();
+  bindAutomationControls();
+});
