@@ -1,0 +1,24 @@
+{
+  "name": "ai-provider-switcher-web",
+  "version": "1.0.0",
+  "description": "Web interface for seamless AI provider account switching",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": [
+    "ai",
+    "provider",
+    "switcher",
+    "gemini",
+    "claude",
+    "gpt",
+    "deepseek",
+    "grok",
+    "ollama",
+    "web"
+  ],
+  "author": "andrytambak-max",
+  "license": "MIT"
+}
