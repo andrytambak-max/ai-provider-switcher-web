@@ -49,7 +49,77 @@ const PROVIDERS = {
     model: 'llama3.1',
     endpoint: 'http://localhost:11434/api/generate',
     needsApiKey: false,
-    note: 'Local local model'
+    note: 'Local model'
+  }
+};
+
+// EA Models with full configuration
+const EA_MODELS = {
+  scalping: {
+    name: 'Scalping EA',
+    version: '2.5',
+    description: 'Ultra-fast scalping strategy for 1-5 min timeframes',
+    features: ['Real-time signals', 'Risk management', 'Volume analysis'],
+    timeframes: ['1m', '5m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 1,
+    takeProfit: 50,
+    stopLoss: 20
+  },
+  daytrading: {
+    name: 'Day Trading EA',
+    version: '3.1',
+    description: 'Daily trading strategy for 15m-1h charts',
+    features: ['Support/Resistance', 'Trend detection', 'Entry signals'],
+    timeframes: ['15m', '30m', '1h'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 2,
+    takeProfit: 100,
+    stopLoss: 40
+  },
+  swingtrading: {
+    name: 'Swing Trading EA',
+    version: '2.8',
+    description: 'Multi-day swing strategy for 4h-1D timeframes',
+    features: ['Fibonacci levels', 'Moving averages', 'Pattern recognition'],
+    timeframes: ['4h', '1D'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 1.5,
+    takeProfit: 200,
+    stopLoss: 60
+  },
+  arbitrage: {
+    name: 'Arbitrage EA',
+    version: '2.2',
+    description: 'Cross-exchange arbitrage opportunities',
+    features: ['Price discrepancy detection', 'Instant execution', 'Low latency'],
+    timeframes: ['1m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 0.5,
+    takeProfit: 25,
+    stopLoss: 10
+  },
+  gridtrading: {
+    name: 'Grid Trading EA',
+    version: '3.0',
+    description: 'Grid-based trading in range-bound markets',
+    features: ['Auto-grid placement', 'Profit accumulation', 'Dynamic levels'],
+    timeframes: ['5m', '15m'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 2.5,
+    takeProfit: 150,
+    stopLoss: 80
+  },
+  martingale: {
+    name: 'Martingale EA',
+    version: '2.6',
+    description: 'Progressive lot size strategy with reversal detection',
+    features: ['Lot progression', 'Reversal signals', 'Breakeven protection'],
+    timeframes: ['30m', '1h'],
+    assets: ['BTC', 'GOLD'],
+    riskPerTrade: 3,
+    takeProfit: 120,
+    stopLoss: 100
   }
 };
 
@@ -63,6 +133,10 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/providers', (_req, res) => {
   res.json({ providers: PROVIDERS });
+});
+
+app.get('/api/ea-models', (_req, res) => {
+  res.json({ eaModels: EA_MODELS });
 });
 
 function getModel(providerId, customModel) {
@@ -260,7 +334,7 @@ app.post('/api/chat', async (req, res) => {
       maxTokens
     });
 
-    res.json({ ok: true, answer: text, provider: providerId });
+    res.json({ ok: true, answer: text, provider: providerId, timestamp: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message || 'Chat request failed' });
   }
@@ -281,10 +355,53 @@ app.post('/api/test-provider', async (req, res) => {
   }
 });
 
+app.post('/api/market-analysis', async (req, res) => {
+  try {
+    const { providerId, apiKey = '', model = '', asset = 'BTC', timeframe = '1m', eaModel = '' } = req.body || {};
+
+    if (!providerId || !asset) {
+      return res.status(400).json({ error: 'providerId and asset are required' });
+    }
+
+    const marketPrompt = `
+Analyze ${asset} market on ${timeframe} timeframe for ${new Date().toISOString()}.
+Provide:
+1. Current trend (bullish/bearish/sideways)
+2. Key support/resistance levels
+3. Trading setup recommendation
+4. Risk/Reward ratio
+5. Entry and exit points
+${eaModel ? `6. Suggested EA Model: ${eaModel}` : ''}
+Keep response concise and actionable.
+    `.trim();
+
+    const analysis = await generateText({
+      providerId,
+      apiKey,
+      model,
+      message: marketPrompt,
+      temperature: 0.3,
+      maxTokens: 512
+    });
+
+    res.json({
+      ok: true,
+      asset,
+      timeframe,
+      analysis,
+      timestamp: new Date().toISOString(),
+      eaModel: eaModel || 'None'
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message || 'Market analysis failed' });
+  }
+});
+
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`AI Provider Switcher is running on http://localhost:${PORT}`);
+  console.log(`Market analysis & EA automation available`);
 });
