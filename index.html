@@ -1,194 +1,907 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Provider Account Switcher</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <h1>🤖 AI Provider Switcher</h1>
-                <p>Seamlessly switch between multiple AI providers</p>
-                <div class="header-links">
-                    <a href="docs/FREE_API_GUIDE.md" target="_blank" class="header-link">📖 Free API Guide</a>
-                    <a href="README.md" target="_blank" class="header-link">📚 Documentation</a>
-                </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Provider Switcher</title>
+    <meta
+      name="description"
+      content="Web interface for seamless AI provider account switching across Gemini, Claude, GPT, Deepseek, Grok, and Ollama."
+    />
+    <style>
+      :root {
+        --bg: #07111f;
+        --bg-soft: #0d1b2a;
+        --panel: rgba(15, 23, 42, 0.9);
+        --panel-2: rgba(17, 24, 39, 0.95);
+        --card: rgba(30, 41, 59, 0.8);
+        --line: rgba(148, 163, 184, 0.2);
+        --text: #e5eefb;
+        --muted: #a9b9d1;
+        --primary: #7c3aed;
+        --primary-2: #3b82f6;
+        --accent: #22c55e;
+        --warning: #f59e0b;
+        --pink: #ec4899;
+        --shadow: 0 18px 45px rgba(15, 23, 42, 0.55);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(124, 58, 237, 0.25), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.15), transparent 30%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        max-width: 100%;
+      }
+
+      .container {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(18px);
+        background: rgba(7, 17, 31, 0.7);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 76px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        box-shadow: var(--shadow);
+        font-size: 1.15rem;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        color: var(--muted);
+        font-size: 0.96rem;
+      }
+
+      .nav-links a:hover {
+        color: var(--text);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 46px;
+        padding: 0 18px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        color: white;
+        box-shadow: 0 12px 30px rgba(124, 58, 237, 0.35);
+      }
+
+      .btn-secondary {
+        background: rgba(148, 163, 184, 0.08);
+        border-color: var(--line);
+        color: var(--text);
+      }
+
+      .hero {
+        padding: 82px 0 60px;
+      }
+
+      .hero-inner {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 38px;
+        align-items: center;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(124, 58, 237, 0.45);
+        background: rgba(124, 58, 237, 0.1);
+        color: #d8c1ff;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 20px 0 18px;
+        font-size: clamp(2.6rem, 5vw, 5rem);
+        line-height: 1.08;
+        letter-spacing: -0.05em;
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, #d9b3ff 0%, #7c3aed 28%, #4f9cff 72%, #30d5c8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .lead {
+        max-width: 620px;
+        color: var(--muted);
+        font-size: 1.12rem;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+
+      .trust {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 28px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .trust strong {
+        color: var(--text);
+      }
+
+      .device {
+        position: relative;
+        width: min(100%, 520px);
+        margin-left: auto;
+      }
+
+      .device-shell {
+        position: relative;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 24, 39, 0.83));
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+      }
+
+      .window-bar {
+        height: 40px;
+        border-radius: 16px 16px 10px 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .dot:nth-child(1) { background: #fb7185; }
+      .dot:nth-child(2) { background: #fbbf24; }
+      .dot:nth-child(3) { background: #34d399; }
+
+      .panel {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        margin-top: 18px;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-header h3 {
+        margin: 0;
+        font-size: 1.02rem;
+      }
+
+      .badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(34, 197, 94, 0.14);
+        color: #93f3b7;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+
+      .provider-list {
+        padding: 16px 20px 18px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .provider-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: rgba(148, 163, 184, 0.04);
+      }
+
+      .provider-item.active {
+        border-color: rgba(124, 58, 237, 0.7);
+        background: rgba(124, 58, 237, 0.08);
+      }
+
+      .provider-name {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+      }
+
+      .provider-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 1rem;
+        background: rgba(148, 163, 184, 0.08);
+      }
+
+      .provider-item small {
+        color: var(--muted);
+      }
+
+      .switch-tag {
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #bfe0ff;
+        font-size: 0.72rem;
+        border: 1px solid rgba(59, 130, 246, 0.26);
+      }
+
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .mini-stat {
+        padding: 14px 12px;
+        background: rgba(148, 163, 184, 0.04);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+
+      .mini-stat strong {
+        display: block;
+        font-size: 1.25rem;
+      }
+
+      .mini-stat span {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .section {
+        padding: 54px 0;
+      }
+
+      .section-head {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      .section-head h2 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        letter-spacing: -0.04em;
+      }
+
+      .section-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.04rem;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .feature-card,
+      .provider-card,
+      .testimonial,
+      .cta-box {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(17, 24, 39, 0.92));
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .feature-card {
+        padding: 24px;
+      }
+
+      .icon-wrap {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(59, 130, 246, 0.15));
+        font-size: 1.4rem;
+        margin-bottom: 18px;
+      }
+
+      .feature-card h3 {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+      }
+
+      .feature-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .provider-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .provider-card {
+        text-align: center;
+        padding: 22px 16px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+
+      .provider-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(124, 58, 237, 0.5);
+      }
+
+      .provider-card .emoji {
+        font-size: 2.4rem;
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .provider-card .name {
+        font-weight: 700;
+      }
+
+      .provider-card .small {
+        display: block;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .showcase {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 22px;
+        align-items: stretch;
+      }
+
+      .showcase-panel {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(19, 27, 41, 0.9));
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        overflow: hidden;
+      }
+
+      .showcase-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .showcase-head h3 {
+        margin: 0;
+        font-size: 1.08rem;
+      }
+
+      .log-view {
+        padding: 20px;
+        background: rgba(9, 14, 22, 0.9);
+        color: #d9f8ff;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.84rem;
+        line-height: 1.8;
+      }
+
+      .log-line {
+        opacity: 0.9;
+      }
+
+      .log-line .tag {
+        color: #7dd3fc;
+      }
+
+      .log-line .ok {
+        color: #a7f3d0;
+      }
+
+      .log-line .warn {
+        color: #fcd34d;
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 22px;
+      }
+
+      .testimonial {
+        padding: 20px;
+      }
+
+      .quote {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .user-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(59, 130, 246, 0.25));
+      }
+
+      .user-meta strong {
+        display: block;
+      }
+
+      .user-meta span {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .cta-box {
+        margin-top: 22px;
+        padding: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .cta-box h3 {
+        margin: 0 0 8px;
+        font-size: clamp(1.6rem, 3vw, 2.5rem);
+        letter-spacing: -0.04em;
+      }
+
+      .cta-box p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .footer {
+        padding: 28px 0 44px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        margin-top: 20px;
+      }
+
+      .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      @media (max-width: 980px) {
+        .hero-inner,
+        .showcase,
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .provider-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .cta-box {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .nav {
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 14px;
+          padding: 14px 0;
+        }
+
+        .nav-links {
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 12px 18px;
+        }
+
+        .feature-grid,
+        .provider-grid,
+        .stats-row {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          padding-top: 48px;
+        }
+
+        .hero-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <a href="#top" class="brand" aria-label="AI Provider Switcher home">
+          <span class="brand-mark">🤖</span>
+          <span>AI Provider Switcher</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="#features">Features</a>
+          <a href="#providers">Providers</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#cta">Launch</a>
+        </nav>
+
+        <a class="btn btn-primary" href="#cta">Get started</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-inner">
+          <div>
+            <div class="eyebrow">Seamless AI access</div>
+            <h1>
+              Switch AI providers<br />
+              <span class="gradient-text">without the friction.</span>
+            </h1>
+            <p class="lead">
+              Manage Gemini, Claude, GPT, Deepseek, Grok, and Ollama from one clean web interface.
+              Keep multiple accounts organized, switch instantly, and move between models faster than ever.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#cta">Try the demo</a>
+              <a class="btn btn-secondary" href="#features">Explore features</a>
             </div>
-        </header>
 
-        <main class="main-content">
-            <!-- Current Provider Card -->
-            <section class="section current-provider">
-                <h2>📍 Currently Active</h2>
-                <div class="provider-card active">
-                    <div class="provider-header">
-                        <div class="provider-info">
-                            <h3 id="currentProviderName">--</h3>
-                            <p id="currentProviderId" class="provider-id">ID: --</p>
-                        </div>
-                        <div class="provider-icon" id="currentProviderIcon">🔵</div>
-                    </div>
-                    <div class="provider-details">
-                        <div class="detail-item">
-                            <span class="label">Model:</span>
-                            <span id="currentModel" class="value">--</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">API URL:</span>
-                            <span id="currentApiUrl" class="value">--</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Timeout:</span>
-                            <span id="currentTimeout" class="value">--</span>
-                        </div>
-                    </div>
-                    <div class="provider-actions">
-                        <button class="btn btn-test" onclick="testCurrentProvider()">🔍 Test Connection</button>
-                        <button class="btn btn-generate" onclick="showGenerateModal()">✨ Generate Response</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Switch Provider Section -->
-            <section class="section">
-                <h2>🔄 Available Providers</h2>
-                <div class="providers-grid" id="providersGrid">
-                    <!-- Dynamically filled -->
-                </div>
-            </section>
-
-            <!-- Management Section -->
-            <section class="section">
-                <h2>⚙️ Manage Providers</h2>
-                <div class="management-grid">
-                    <div class="management-card">
-                        <h3>➕ Add Provider</h3>
-                        <form id="addProviderForm" onsubmit="addProvider(event)">
-                            <input type="text" id="newProviderId" placeholder="Provider ID" required>
-                            <input type="password" id="newApiKey" placeholder="API Key" required>
-                            <button type="submit" class="btn btn-primary">Add</button>
-                        </form>
-                    </div>
-                    <div class="management-card">
-                        <h3>🔧 Configure</h3>
-                        <select id="configProviderSelect" onchange="showProviderConfig()" class="select">
-                            <option value="">Select provider to configure</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="showConfigModal()">Configure</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Switch History -->
-            <section class="section">
-                <h2>📜 Switch History</h2>
-                <div class="history-controls">
-                    <input type="number" id="historyLimit" value="10" min="5" max="50" class="input">
-                    <button class="btn btn-primary" onclick="loadHistory()">Load History</button>
-                    <button class="btn btn-secondary" onclick="clearHistory()">Clear History</button>
-                </div>
-                <div class="history-list" id="historyList">
-                    <div class="empty-state">No history yet</div>
-                </div>
-            </section>
-
-            <!-- Stats Section -->
-            <section class="section">
-                <h2>📊 Statistics</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalProviders">0</div>
-                        <div class="stat-label">Total Providers</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalSwitches">0</div>
-                        <div class="stat-label">Total Switches</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="lastSwitch">Never</div>
-                        <div class="stat-label">Last Switch</div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Modal: Generate Response -->
-    <div id="generateModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>✨ Generate AI Response</h2>
-                <button class="close-btn" onclick="closeModal('generateModal')">&times;</button>
+            <div class="trust">
+              <span><strong>6+</strong> provider integrations</span>
+              <span><strong>1-click</strong> switching</span>
+              <span><strong>100%</strong> browser-based</span>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="userMessage">Your Message:</label>
-                    <textarea id="userMessage" placeholder="Type your message here..." rows="4"></textarea>
+          </div>
+
+          <div class="device" aria-label="Application preview">
+            <div class="device-shell">
+              <div class="window-bar">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Active provider</h3>
+                  <span class="badge">Online</span>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="temperature">Temperature (0-1):</label>
-                        <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1" class="input">
+
+                <div class="provider-list">
+                  <div class="provider-item active">
+                    <div class="provider-name">
+                      <span class="provider-icon">🧠</span>
+                      <div>
+                        <div>Claude</div>
+                        <small>Account 01</small>
+                      </div>
                     </div>
-                    <div class="form-group">
-                        <label for="maxTokens">Max Tokens:</label>
-                        <input type="number" id="maxTokens" value="2000" min="100" class="input">
+                    <span class="switch-tag">Selected</span>
+                  </div>
+
+                  <div class="provider-item">
+                    <div class="provider-name">
+                      <span class="provider-icon">✨</span>
+                      <div>
+                        <div>Gemini</div>
+                        <small>Account 02</small>
+                      </div>
                     </div>
+                    <span class="switch-tag">Ready</span>
+                  </div>
+
+                  <div class="provider-item">
+                    <div class="provider-name">
+                      <span class="provider-icon">🚀</span>
+                      <div>
+                        <div>GPT</div>
+                        <small>Account 03</small>
+                      </div>
+                    </div>
+                    <span class="switch-tag">Ready</span>
+                  </div>
                 </div>
-                <div class="form-group">
-                    <label for="responseArea">Response:</label>
-                    <textarea id="responseArea" readonly rows="6"></textarea>
+              </div>
+
+              <div class="stats-row">
+                <div class="mini-stat">
+                  <strong>6</strong>
+                  <span>Providers</span>
                 </div>
+                <div class="mini-stat">
+                  <strong>13</strong>
+                  <span>Accounts</span>
+                </div>
+                <div class="mini-stat">
+                  <strong>1s</strong>
+                  <span>Switch</span>
+                </div>
+              </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="generateResponse()">Generate</button>
-                <button class="btn btn-secondary" onclick="closeModal('generateModal')">Close</button>
-            </div>
+          </div>
         </div>
-    </div>
+      </section>
 
-    <!-- Modal: Configure Provider -->
-    <div id="configModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🔧 Configure Provider</h2>
-                <button class="close-btn" onclick="closeModal('configModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="configName">Provider Name:</label>
-                    <input type="text" id="configName" class="input">
-                </div>
-                <div class="form-group">
-                    <label for="configModel">Model:</label>
-                    <input type="text" id="configModel" class="input">
-                </div>
-                <div class="form-group">
-                    <label for="configUrl">API URL:</label>
-                    <input type="text" id="configUrl" class="input">
-                </div>
-                <div class="form-group">
-                    <label for="configTimeout">Timeout (ms):</label>
-                    <input type="number" id="configTimeout" class="input">
-                </div>
-                <div class="form-group">
-                    <label for="configApiKey">API Key:</label>
-                    <input type="password" id="configApiKey" class="input">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="saveProviderConfig()">Save</button>
-                <button class="btn btn-secondary" onclick="closeModal('configModal')">Close</button>
-            </div>
+      <section class="section" id="features">
+        <div class="container">
+          <div class="section-head">
+            <h2>Everything you need to manage AI access</h2>
+            <p>Designed for people who jump between models, accounts, and workflows every day.</p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="icon-wrap">⚡</div>
+              <h3>Instant provider switching</h3>
+              <p>Move between AI services in one click without disrupting your workflow or reconfiguring everything.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="icon-wrap">🔐</div>
+              <h3>Secure account management</h3>
+              <p>Keep provider keys and sessions cleanly organized with clear controls for each account.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="icon-wrap">📊</div>
+              <h3>Smart status tracking</h3>
+              <p>See active provider, model health, API URL, timeouts, and recent activity in a single dashboard.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="icon-wrap">🧩</div>
+              <h3>Multi-provider support</h3>
+              <p>Use Gemini, Claude, GPT, Deepseek, Grok, and Ollama together without context switching.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="icon-wrap">🖥️</div>
+              <h3>Clean browser interface</h3>
+              <p>Built for speed and clarity, with a modern layout that feels lightweight and easy to navigate.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="icon-wrap">🔄</div>
+              <h3>Switch history</h3>
+              <p>Track recent provider changes and understand what has been used most often in your workflow.</p>
+            </article>
+          </div>
         </div>
-    </div>
+      </section>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="toast"></div>
+      <section class="section" id="providers">
+        <div class="container">
+          <div class="section-head">
+            <h2>Supported AI providers</h2>
+            <p>One interface, many models, flexible workflows.</p>
+          </div>
 
-    <script src="app.js"></script>
-</body>
+          <div class="provider-grid">
+            <div class="provider-card">
+              <span class="emoji">🔷</span>
+              <span class="name">Gemini</span>
+              <span class="small">Vision + text</span>
+            </div>
+            <div class="provider-card">
+              <span class="emoji">🧠</span>
+              <span class="name">Claude</span>
+              <span class="small">Reasoning</span>
+            </div>
+            <div class="provider-card">
+              <span class="emoji">🚀</span>
+              <span class="name">GPT</span>
+              <span class="small">General AI</span>
+            </div>
+            <div class="provider-card">
+              <span class="emoji">🌊</span>
+              <span class="name">Deepseek</span>
+              <span class="small">Open model</span>
+            </div>
+            <div class="provider-card">
+              <span class="emoji">🐦</span>
+              <span class="name">Grok</span>
+              <span class="small">Realtime</span>
+            </div>
+            <div class="provider-card">
+              <span class="emoji">🦙</span>
+              <span class="name">Ollama</span>
+              <span class="small">Local AI</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
+        <div class="container">
+          <div class="section-head">
+            <h2>Built for daily work</h2>
+            <p>Monitor, test, configure, and switch—all from one place.</p>
+          </div>
+
+          <div class="showcase">
+            <div class="showcase-panel">
+              <div class="showcase-head">
+                <h3>Provider activity</h3>
+                <span class="badge">Live</span>
+              </div>
+
+              <div class="log-view" aria-label="Activity log preview">
+                <div class="log-line"><span class="tag">[12:20:08]</span> loaded providers: 6</div>
+                <div class="log-line"><span class="tag">[12:20:11]</span> active provider: <span class="ok">Claude</span></div>
+                <div class="log-line"><span class="tag">[12:20:18]</span> timeout config: <span class="warn">30000 ms</span></div>
+                <div class="log-line"><span class="tag">[12:20:22]</span> switch action: <span class="ok">GPT → Gemini</span></div>
+                <div class="log-line"><span class="tag">[12:20:28]</span> connection check: <span class="ok">successful</span></div>
+                <div class="log-line"><span class="tag">[12:20:35]</span> session updated in local storage</div>
+              </div>
+            </div>
+
+            <div class="side-stack">
+              <article class="testimonial">
+                <p class="quote">
+                  “This is the first time I can keep all my AI accounts in one clean place and move between them without losing context.”
+                </p>
+                <div class="user">
+                  <div class="user-avatar">AR</div>
+                  <div class="user-meta">
+                    <strong>Arif Rahman</strong>
+                    <span>Product designer</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="testimonial">
+                <p class="quote">
+                  “Great for comparing models quickly, testing prompts, and keeping provider-specific credentials organized.”
+                </p>
+                <div class="user">
+                  <div class="user-avatar">MS</div>
+                  <div class="user-meta">
+                    <strong>Maya Sari</strong>
+                    <span>Developer</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="cta">
+        <div class="container">
+          <div class="cta-box">
+            <div>
+              <h3>Ready to simplify your AI workflow?</h3>
+              <p>Start organizing all your AI accounts in one modern web dashboard.</p>
+            </div>
+
+            <div class="hero-actions" style="margin-top: 0;">
+              <a href="#top" class="btn btn-primary">Launch app</a>
+              <a href="#features" class="btn btn-secondary">Learn more</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="brand">
+          <span class="brand-mark">🤖</span>
+          <span>AI Provider Switcher</span>
+        </div>
+        <div>© 2026 AI Provider Switcher. Built for switching smarter.</div>
+      </div>
+    </footer>
+  </body>
 </html>
