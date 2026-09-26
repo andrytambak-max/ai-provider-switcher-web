@@ -53,7 +53,6 @@ const PROVIDERS = {
   }
 };
 
-// EA Models with full configuration
 const EA_MODELS = {
   scalping: {
     name: 'Scalping EA',
@@ -124,7 +123,7 @@ const EA_MODELS = {
 };
 
 app.use(cors());
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname)));
 
 app.get('/api/health', (_req, res) => {
@@ -143,40 +142,48 @@ function getModel(providerId, customModel) {
   return customModel && customModel.trim() ? customModel.trim() : PROVIDERS[providerId]?.model || 'gpt-4o-mini';
 }
 
-async function requestGemini({ apiKey, model, prompt, temperature, maxTokens }) {
+async function requestGemini({ apiKey, model, prompt, temperature, maxTokens, imageData = null }) {
   const url = `${PROVIDERS.gemini.endpoint}/${model}:generateContent?key=${apiKey}`;
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature,
-      maxOutputTokens: maxTokens
-    }
-  };
+  const parts = [{ text: prompt }];
+
+  if (imageData) {
+    parts.push({ inline_data: { mime_type: 'image/png', data: imageData.replace(/^data:image\/png;base64,/, '') } });
+  }
 
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens
+      }
+    })
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message || 'Gemini request failed');
-  }
+  if (!response.ok) throw new Error(data?.error?.message || 'Gemini request failed');
 
-  const text = data?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || '')
-    .join('')
-    .trim();
-
-  if (!text) {
-    throw new Error('Empty response from Gemini');
-  }
-
+  const text = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
+  if (!text) throw new Error('Empty response from Gemini');
   return text;
 }
 
-async function requestClaude({ apiKey, model, prompt, temperature, maxTokens }) {
+async function requestClaude({ apiKey, model, prompt, temperature, maxTokens, imageData = null }) {
+  const content = [{ type: 'text', text: prompt }];
+
+  if (imageData) {
+    content.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: 'image/png',
+        data: imageData.replace(/^data:image\/png;base64,/, '')
+      }
+    });
+  }
+
   const response = await fetch(PROVIDERS.claude.endpoint, {
     method: 'POST',
     headers: {
@@ -186,27 +193,27 @@ async function requestClaude({ apiKey, model, prompt, temperature, maxTokens }) 
     },
     body: JSON.stringify({
       model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
       max_tokens: maxTokens,
       temperature
     })
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message || 'Claude request failed');
-  }
-
+  if (!response.ok) throw new Error(data?.error?.message || 'Claude request failed');
   const text = data?.content?.[0]?.text?.trim();
-  if (!text) {
-    throw new Error('Empty response from Claude');
-  }
-
+  if (!text) throw new Error('Empty response from Claude');
   return text;
 }
 
-async function requestOpenAiStyle({ providerId, apiKey, model, prompt, temperature, maxTokens }) {
+async function requestOpenAiStyle({ providerId, apiKey, model, prompt, temperature, maxTokens, imageData = null }) {
   const endpoint = PROVIDERS[providerId].endpoint;
+  const content = [{ type: 'text', text: prompt }];
+
+  if (imageData) {
+    content.push({ type: 'image_url', image_url: { url: imageData } });
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -215,115 +222,93 @@ async function requestOpenAiStyle({ providerId, apiKey, model, prompt, temperatu
     },
     body: JSON.stringify({
       model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
       temperature,
       max_tokens: maxTokens
     })
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message || `${PROVIDERS[providerId].name} request failed`);
-  }
+  if (!response.ok) throw new Error(data?.error?.message || `${PROVIDERS[providerId].name} request failed`);
 
   const text = data?.choices?.[0]?.message?.content;
-  if (!text) {
-    throw new Error(`Empty response from ${PROVIDERS[providerId].name}`);
-  }
-
+  if (!text) throw new Error(`Empty response from ${PROVIDERS[providerId].name}`);
   return typeof text === 'string' ? text : text.join('');
 }
 
-async function requestOllama({ apiKey, model, prompt, temperature, maxTokens }) {
-  const response = await fetch(PROVIDERS.local.endpoint, {
+async function requestOllama({ model, prompt, temperature, maxTokens, imageData = null }) {
+  const body = {
+    model,
+    prompt,
+    stream: false,
+    options: {
+      temperature,
+      num_predict: maxTokens
+    }
+  };
+
+  if (imageData) {
+    body.images = [imageData.replace(/^data:image\/png;base64,/, '')];
+  }
+
+  const response = await fetch(PROVIDERS.local.endpoint.replace('/api/generate', '/api/generate'), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      prompt,
-      stream: false,
-      options: {
-        temperature,
-        num_predict: maxTokens
-      }
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error || 'Ollama request failed');
-  }
+  if (!response.ok) throw new Error(data?.error || 'Ollama request failed');
 
   const text = data?.response?.trim();
-  if (!text) {
-    throw new Error('Empty response from Ollama');
-  }
-
+  if (!text) throw new Error('Empty response from Ollama');
   return text;
 }
 
-async function generateText({ providerId, apiKey, model, message, temperature, maxTokens }) {
+async function generateText({ providerId, apiKey, model, message, temperature, maxTokens, imageData = null }) {
   const safeModel = getModel(providerId, model);
 
   if (providerId === 'gemini') {
-    if (!apiKey) {
-      throw new Error('Gemini API key is required');
-    }
-    return requestGemini({ apiKey, model: safeModel, prompt: message, temperature, maxTokens });
+    if (!apiKey) throw new Error('Gemini API key is required');
+    return requestGemini({ apiKey, model: safeModel, prompt: message, temperature, maxTokens, imageData });
   }
 
   if (providerId === 'claude') {
-    if (!apiKey) {
-      throw new Error('Claude API key is required');
-    }
-    return requestClaude({ apiKey, model: safeModel, prompt: message, temperature, maxTokens });
+    if (!apiKey) throw new Error('Claude API key is required');
+    return requestClaude({ apiKey, model: safeModel, prompt: message, temperature, maxTokens, imageData });
   }
 
   if (providerId === 'gpt' || providerId === 'deepseek' || providerId === 'grok') {
-    if (!apiKey) {
-      throw new Error(`${PROVIDERS[providerId].name} API key is required`);
-    }
-    return requestOpenAiStyle({ providerId, apiKey, model: safeModel, prompt: message, temperature, maxTokens });
+    if (!apiKey) throw new Error(`${PROVIDERS[providerId].name} API key is required`);
+    return requestOpenAiStyle({ providerId, apiKey, model: safeModel, prompt: message, temperature, maxTokens, imageData });
   }
 
   if (providerId === 'local') {
-    return requestOllama({ apiKey: apiKey || '', model: safeModel, prompt: message, temperature, maxTokens });
+    return requestOllama({ model: safeModel, prompt: message, temperature, maxTokens, imageData });
   }
 
   throw new Error('Unsupported provider');
 }
 
 async function runProviderCheck({ providerId, apiKey, model }) {
-  const testPrompt = 'Reply with OK only.';
   const result = await generateText({
     providerId,
     apiKey,
     model,
-    message: testPrompt,
+    message: 'Reply with OK only.',
     temperature: 0.2,
     maxTokens: 8
   });
 
-  return {
-    ok: true,
-    provider: providerId,
-    answer: result
-  };
+  return { ok: true, provider: providerId, answer: result };
 }
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { providerId, apiKey = '', model = '', message = '', temperature = 0.7, maxTokens = 512 } = req.body || {};
 
-    if (!providerId) {
-      return res.status(400).json({ error: 'providerId is required' });
-    }
-
-    if (!message || !message.trim()) {
-      return res.status(400).json({ error: 'message is required' });
-    }
+    if (!providerId) return res.status(400).json({ error: 'providerId is required' });
+    if (!message || !message.trim()) return res.status(400).json({ error: 'message is required' });
 
     const text = await generateText({
       providerId,
@@ -343,10 +328,7 @@ app.post('/api/chat', async (req, res) => {
 app.post('/api/test-provider', async (req, res) => {
   try {
     const { providerId, apiKey = '', model = '' } = req.body || {};
-
-    if (!providerId) {
-      return res.status(400).json({ error: 'providerId is required' });
-    }
+    if (!providerId) return res.status(400).json({ error: 'providerId is required' });
 
     const result = await runProviderCheck({ providerId, apiKey, model });
     res.json(result);
@@ -359,21 +341,9 @@ app.post('/api/market-analysis', async (req, res) => {
   try {
     const { providerId, apiKey = '', model = '', asset = 'BTC', timeframe = '1m', eaModel = '' } = req.body || {};
 
-    if (!providerId || !asset) {
-      return res.status(400).json({ error: 'providerId and asset are required' });
-    }
+    if (!providerId || !asset) return res.status(400).json({ error: 'providerId and asset are required' });
 
-    const marketPrompt = `
-Analyze ${asset} market on ${timeframe} timeframe for ${new Date().toISOString()}.
-Provide:
-1. Current trend (bullish/bearish/sideways)
-2. Key support/resistance levels
-3. Trading setup recommendation
-4. Risk/Reward ratio
-5. Entry and exit points
-${eaModel ? `6. Suggested EA Model: ${eaModel}` : ''}
-Keep response concise and actionable.
-    `.trim();
+    const marketPrompt = `Analyze ${asset} market on ${timeframe} timeframe for ${new Date().toISOString()}. Provide: 1. trend 2. support/resistance 3. entry/exit 4. risk/reward 5. EA suitability ${eaModel ? `6. suggested EA: ${eaModel}` : ''}. Keep it concise and actionable.`;
 
     const analysis = await generateText({
       providerId,
@@ -384,16 +354,44 @@ Keep response concise and actionable.
       maxTokens: 512
     });
 
-    res.json({
-      ok: true,
-      asset,
-      timeframe,
-      analysis,
-      timestamp: new Date().toISOString(),
-      eaModel: eaModel || 'None'
-    });
+    res.json({ ok: true, asset, timeframe, analysis, timestamp: new Date().toISOString(), eaModel: eaModel || 'None' });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message || 'Market analysis failed' });
+  }
+});
+
+app.post('/api/vision-analysis', async (req, res) => {
+  try {
+    const {
+      providerId,
+      apiKey = '',
+      model = '',
+      asset = 'BTC',
+      timeframe = '1m',
+      eaModel = 'scalping',
+      prompt = '',
+      chartImages = []
+    } = req.body || {};
+
+    if (!providerId) return res.status(400).json({ error: 'providerId is required' });
+    if (!chartImages || !chartImages.length) return res.status(400).json({ error: 'chartImages are required' });
+
+    const imagePayload = chartImages[0]?.data || null;
+    const promptText = `${prompt || 'Analyze this trading chart and give a succinct trading recommendation.'} Asset: ${asset}. Timeframe: ${timeframe}. EA Model: ${eaModel}.`;
+
+    const analysis = await generateText({
+      providerId,
+      apiKey,
+      model,
+      message: promptText,
+      temperature: 0.3,
+      maxTokens: 600,
+      imageData: imagePayload
+    });
+
+    res.json({ ok: true, analysis, asset, timeframe, provider: providerId, timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message || 'Vision analysis failed' });
   }
 });
 
@@ -403,5 +401,5 @@ app.get('*', (_req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`AI Provider Switcher is running on http://localhost:${PORT}`);
-  console.log(`Market analysis & EA automation available`);
+  console.log('AI vision analysis and 1-minute EA automation enabled');
 });
