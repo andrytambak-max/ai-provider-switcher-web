@@ -1,11 +1,12 @@
 {
   "name": "ai-provider-switcher-web",
-  "version": "1.0.0",
-  "description": "Web interface for seamless AI provider account switching",
-  "main": "index.html",
+  "version": "1.1.0",
+  "description": "Web interface for seamless AI provider switching with real backend connectivity",
+  "main": "server.js",
   "scripts": {
-    "start": "python -m http.server 8000",
-    "dev": "python -m http.server 8000"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "node server.js"
   },
   "keywords": [
     "ai",
@@ -17,8 +18,14 @@
     "deepseek",
     "grok",
     "ollama",
-    "web"
+    "web",
+    "backend"
   ],
   "author": "andrytambak-max",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
 }
