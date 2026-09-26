@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Provider Switcher</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://s3.tradingview.com/tv.js"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -14,7 +15,7 @@
             <div class="brand-icon">🤖</div>
             <div>
               <div class="brand-name">AI Provider Switcher</div>
-              <div class="brand-subtitle">Web dashboard</div>
+              <div class="brand-subtitle">Web dashboard + Market Analysis</div>
             </div>
           </div>
 
@@ -23,10 +24,27 @@
       </header>
 
       <main class="container main-content">
+        <section class="panel market-section">
+          <div class="panel-header">
+            <h2>📈 Market Analysis (TradingView)</h2>
+            <span id="statusBadge" class="status-badge">Ready</span>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-container">
+              <h3>Bitcoin (BTC)</h3>
+              <div id="tradingview-btc" class="tradingview-chart"></div>
+            </div>
+            <div class="chart-container">
+              <h3>Gold (XAUUSD)</h3>
+              <div id="tradingview-gold" class="tradingview-chart"></div>
+            </div>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="panel-header">
-            <h2>Available providers</h2>
-            <span id="statusBadge" class="status-badge">Ready</span>
+            <h2>🤖 Available providers</h2>
           </div>
           <div id="providerGrid" class="provider-grid"></div>
         </section>
@@ -80,8 +98,8 @@
         </section>
 
         <section class="panel chat-panel">
-          <h3>Ask the selected AI</h3>
-          <textarea id="promptInput" rows="8" placeholder="Type your prompt here...">Write a short product description for an AI provider dashboard.</textarea>
+          <h3>💬 Ask the selected AI</h3>
+          <textarea id="promptInput" rows="8" placeholder="Type your prompt here...">Analyze the BTC and Gold market trends shown in the charts above and provide insights.</textarea>
 
           <div class="chat-settings">
             <label>
@@ -97,18 +115,18 @@
           </div>
 
           <div class="form-actions">
-            <button id="generateBtn" class="btn btn-primary">Generate</button>
+            <button id="generateBtn" class="btn btn-primary">Generate Analysis</button>
             <button id="clearBtn" type="button" class="btn btn-secondary">Clear</button>
           </div>
         </section>
 
         <section class="panel response-panel">
-          <h3>Response</h3>
+          <h3>📊 AI Response</h3>
           <pre id="responseOutput" class="response-output">No response yet.</pre>
         </section>
 
         <section class="panel history-panel">
-          <h3>Recent history</h3>
+          <h3>📜 Recent History</h3>
           <ul id="historyList" class="history-list"></ul>
         </section>
       </main>
@@ -117,5 +135,38 @@
     <div id="toast" class="toast"></div>
 
     <script src="app.js"></script>
+    <script>
+      function initTradingViewCharts() {
+        new TradingView.widget({
+          autosize: true,
+          symbol: 'BITSTAMP:BTCUSD',
+          interval: 'D',
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#f1f3f6',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          container_id: 'tradingview-btc'
+        });
+
+        new TradingView.widget({
+          autosize: true,
+          symbol: 'TVC:GOLD',
+          interval: 'D',
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#f1f3f6',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          container_id: 'tradingview-gold'
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', initTradingViewCharts);
+    </script>
   </body>
 </html>
